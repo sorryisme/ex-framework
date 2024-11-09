@@ -42,7 +42,10 @@ public class Main {
                 }
 
                 System.out.println(sb.toString());
-                out.write("Hello World");
+                out.write("HTTP/1.1 200 OK\n");
+                out.write("Content-Type: text/plain\n");
+                out.write("\n");
+                out.write("Hello World!");
 
                 out.close();
                 in.close();
