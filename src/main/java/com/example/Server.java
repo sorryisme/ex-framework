@@ -60,12 +60,15 @@ public class Server {
                 String requestBody = new String(body);
 
                 //클래스화 하는 부분
-                System.out.println(parseStringToClass(requestBody));
+                MessageDto dto = parseStringToClass(requestBody);
+                System.out.println(dto);
 
                 out.write("HTTP/1.1 200 OK\n");
                 out.write("Content-Type: application/json\n");
                 out.write("\n");
-                out.write("{\"message\": \"success\"}");
+                out.write(dto.toStringify());
+
+
 
                 out.close();
                 in.close();
@@ -87,7 +90,7 @@ public class Server {
     }
 
 
-    public Object parseStringToClass(String requestBody) throws Exception {
+    public MessageDto parseStringToClass(String requestBody) throws Exception {
         try {
 
             Pattern pattern = Pattern.compile("\"([^\"]*)\"\\s*:\\s*\"([^\"]*)\"");
@@ -108,7 +111,7 @@ public class Server {
             Class<MessageDto> messageDtoClass = MessageDto.class;
             Field field = messageDtoClass.getDeclaredField(property);
 
-            Object instance = messageDtoClass.getDeclaredConstructor().newInstance();
+            MessageDto instance = messageDtoClass.getDeclaredConstructor().newInstance();
             field.set(instance, value);
 
             return instance;
