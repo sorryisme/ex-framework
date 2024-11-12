@@ -1,10 +1,11 @@
 package com.example;
 
-import com.example.request.RequestBody;
-import com.example.request.RequestDto;
+import com.example.controller.Controller;
+import com.example.proxy.DynamicProxyHandler;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.net.ServerSocket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +34,7 @@ public class Server {
                 String data = null;
                 StringBuilder headers = new StringBuilder();
                 int contentLength = 0;
+                String url = "";
 
                 
                 // 헤더 읽기               
@@ -42,6 +44,14 @@ public class Server {
 
                     if(data == null || data.isEmpty()) {
                         break;
+                    }
+
+                    //url 추출
+                    if (headers.length() == 0) {
+                        String[] requestLine = data.split(" ");
+                        if (requestLine.length > 1) {
+                            url = requestLine[1]; // 두 번째 요소가 URL 경로
+                        }
                     }
 
                     if (data.startsWith("Content-Length:")) {
@@ -59,15 +69,20 @@ public class Server {
                 in.read(body, 0, contentLength);
                 String requestBody = new String(body);
 
-                //클래스화 하는 부분
-                MessageDto dto = parseStringToClass(requestBody);
-                System.out.println(dto);
+                if ("/request".equals(url)) {
+                    Controller proxyInstance = (Controller) Proxy.newProxyInstance(
+                            Controller.class.getClassLoader(),
+                            new Class[]{Controller.class},
+                            new DynamicProxyHandler(requestBody)
+                    );
+
+                    System.out.println(proxyInstance.parseStringToJson(new MessageDto()));
+                }
+
 
                 out.write("HTTP/1.1 200 OK\n");
                 out.write("Content-Type: application/json\n");
                 out.write("\n");
-                out.write(dto.toStringify());
-
 
 
                 out.close();
@@ -90,33 +105,33 @@ public class Server {
     }
 
 
-    public MessageDto parseStringToClass(String requestBody) throws Exception {
-        try {
-
-            Pattern pattern = Pattern.compile("\"([^\"]*)\"\\s*:\\s*\"([^\"]*)\"");
-            Matcher matcher = pattern.matcher(requestBody);
-            
-            String property = null;
-            String value = null;
-
-            if (matcher.find()) {
-                property = matcher.group(1);
-                value = matcher.group(2);
-            }
-
-            if(property == null || value == null) {
-                return null;
-            }
-
-            Class<MessageDto> messageDtoClass = MessageDto.class;
-            Field field = messageDtoClass.getDeclaredField(property);
-
-            MessageDto instance = messageDtoClass.getDeclaredConstructor().newInstance();
-            field.set(instance, value);
-
-            return instance;
-        } catch (NoSuchFieldException e) {
-            return null;
-        }
-    }
+//    public MessageDto parseStringToClass(String requestBody) throws Exception {
+//        try {
+//
+//            Pattern pattern = Pattern.compile("\"([^\"]*)\"\\s*:\\s*\"([^\"]*)\"");
+//            Matcher matcher = pattern.matcher(requestBody);
+//
+//            String property = null;
+//            String value = null;
+//
+//            if (matcher.find()) {
+//                property = matcher.group(1);
+//                value = matcher.group(2);
+//            }
+//
+//            if(property == null || value == null) {
+//                return null;
+//            }
+//
+//            Class<MessageDto> messageDtoClass = MessageDto.class;
+//            Field field = messageDtoClass.getDeclaredField(property);
+//
+//            MessageDto instance = messageDtoClass.getDeclaredConstructor().newInstance();
+//            field.set(instance, value);
+//
+//            return instance;
+//        } catch (NoSuchFieldException e) {
+//            return null;
+//        }
+//    }
 }

@@ -1,8 +1,17 @@
 package com.example;
 
+
 public class MessageDto {
 
     public String message;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
     public String toStringify() {
         StringBuilder sb = new StringBuilder();
